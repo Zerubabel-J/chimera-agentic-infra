@@ -1,6 +1,6 @@
 # Project Chimera - Day 1 Submission Report
 
-**Author:** [Your Name]
+**Author:** Zerubabel
 **Date:** February 4, 2026
 **Repository:** https://github.com/Zerubabel-J/chimera-agentic-infra
 
