@@ -1,0 +1,47 @@
+# CodeRabbit AI Review Configuration
+# https://docs.coderabbit.ai/guides/configure-coderabbit
+#
+# This configures automated AI code review for Project Chimera.
+# CodeRabbit reviews every PR for spec alignment and security.
+
+language: en
+
+reviews:
+  # Enable automated reviews on every PR
+  auto_review:
+    enabled: true
+
+  # What the AI reviewer should focus on
+  instructions: |
+    You are reviewing code for Project Chimera, an Autonomous Influencer Network.
+
+    CRITICAL CHECKS:
+    1. **Spec Alignment:** All code must reference a spec in specs/functional.md.
+       If code implements behavior not covered by a spec, flag it.
+    2. **Contract Compliance:** Data structures must match specs/technical.md.
+       Check Pydantic models match the defined JSON contracts.
+    3. **Security:** Flag any hardcoded API keys, secrets, or credentials.
+       All secrets must use environment variables.
+    4. **Architecture:** Code must follow the Planner/Worker/Judge pattern.
+       No direct API calls - all external access via MCP servers.
+    5. **Testing:** New code should have corresponding tests in tests/.
+
+  # Review profile - how strict the reviewer is
+  profile: assertive
+
+  # Path-specific instructions
+  path_instructions:
+    - path: "skills/**"
+      instructions: |
+        Each skill must:
+        - Have a models.py with Pydantic contracts
+        - Have a service.py with the main function
+        - Match the Input/Output contract in its README.md
+    - path: "specs/**"
+      instructions: |
+        Spec changes require extra scrutiny.
+        Ensure backward compatibility or explicit migration notes.
+    - path: "tests/**"
+      instructions: |
+        Tests must reference a spec ID (FR-xxx) in their docstring.
+        Verify tests check acceptance criteria from specs/functional.md.
