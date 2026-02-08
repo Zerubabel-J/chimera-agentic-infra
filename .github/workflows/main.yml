@@ -68,3 +68,11 @@ jobs:
           .venv/bin/python -m pytest tests/ -v --tb=short || true
         # Note: `|| true` because tests are EXPECTED to fail in TDD phase.
         # Remove `|| true` once implementations are complete.
+
+      - name: Generate test report
+        if: always()
+        run: |
+          echo "## Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** TDD Phase - 21 tests expected to fail" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          .venv/bin/python -m pytest tests/ --tb=no -q || true >> $GITHUB_STEP_SUMMARY
