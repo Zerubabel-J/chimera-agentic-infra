@@ -257,7 +257,7 @@ test: add acceptance criteria for FR-A02
 
 ## 🎥 Video Walkthrough
 
-> [Link to Loom video walkthrough](https://your-loom-link-here)
+> [Link to Loom video walkthrough](https://www.loom.com/share/bf440345e9694a29a7d49ecffb06f5e7)
 
 Covers:
 - Spec structure explanation
