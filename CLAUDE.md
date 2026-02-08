@@ -61,3 +61,121 @@ research/       → Architecture decisions and research notes
 - Do NOT hardcode API keys - use environment variables
 - Do NOT create monolithic files - keep modules focused and small
 - Do NOT auto-publish content without Judge evaluation
+
+## Agent Behavior Guidelines
+
+### Decision-Making Framework
+
+When implementing agent logic, follow this decision tree:
+
+1. **Is there a spec for this?**
+   - YES → Follow the spec exactly
+   - NO → Ask for clarification or create a spec proposal
+
+2. **Does this involve external data?**
+   - YES → Use an MCP server, never direct API calls
+   - NO → Proceed with internal logic
+
+3. **Does this create content for publishing?**
+   - YES → Must go through Judge agent review
+   - NO → Can proceed directly
+
+### Error Handling
+
+```python
+# Good: Specific errors with context
+try:
+    result = fetch_trends(agent_id, platform, niche)
+except MCPConnectionError as e:
+    logger.error(f"MCP server unreachable: {e}")
+    # Escalate to human operator
+except ValidationError as e:
+    logger.error(f"Invalid data shape from {platform}: {e}")
+    # Retry with fallback
+
+# Bad: Silent failures or generic catches
+try:
+    result = fetch_trends(agent_id, platform, niche)
+except Exception:
+    pass  # ❌ Never do this
+```
+
+### When to Escalate to Human
+
+Automatically escalate when:
+- Confidence score < 0.85 on any decision
+- Sensitive topic detected (politics, health, religion, finance)
+- API rate limit exceeded
+- Data validation fails repeatedly
+- MCP server is unreachable for > 5 minutes
+
+### Example Agent Prompts
+
+**For Planner Agent:**
+```
+You are the Planner. Your job is to decompose campaign goals into atomic tasks.
+
+Goal: "Create 5 tweets about Ethiopian fashion trends"
+
+Your output:
+1. fetch_trends(agent_id, "twitter", "Ethiopian fashion") → Worker1
+2. For each trend → generate_content(agent_id, trend, "twitter") → Worker2-6
+3. For each content → evaluate_content(content) → Judge
+4. For approved → publish(content) → Worker7-11
+
+Dependencies: Task 2 depends on Task 1. Tasks 3-4 depend on Task 2.
+```
+
+**For Worker Agent:**
+```
+You are a Worker. You execute exactly ONE task and return a result.
+
+Task: generate_content
+Input: agent_id="chimera-001", trend="Habesha Kemis Revival", platform="twitter"
+
+Steps:
+1. Load agent persona from SOUL.md
+2. Query Weaviate for relevant memories
+3. Generate content using LLM
+4. Return GeneratedContent object (specs/technical.md Section 1.2)
+```
+
+**For Judge Agent:**
+```
+You are the Judge. You review worker output for quality and safety.
+
+Input: GeneratedContent(text="Check out this Habesha Kemis trend! 🔥")
+
+Checks:
+1. Matches persona voice? ✓
+2. Within 280 chars? ✓
+3. Sensitive topics? ✗ (none detected)
+4. Confidence: 0.92
+
+Decision: APPROVE (confidence > 0.85, no flags)
+```
+
+## Logging and Observability
+
+Every agent action must log:
+- Timestamp
+- Agent ID and role (Planner/Worker/Judge)
+- Task/Decision ID
+- Input/Output summary
+- Confidence score (for Judge decisions)
+- Execution time
+
+```python
+logger.info(
+    "Agent action",
+    extra={
+        "agent_id": agent_id,
+        "role": "worker",
+        "task_id": task_id,
+        "skill": "fetch_trends",
+        "platform": platform,
+        "result_count": len(result.topics),
+        "duration_ms": execution_time,
+    }
+)
+```
